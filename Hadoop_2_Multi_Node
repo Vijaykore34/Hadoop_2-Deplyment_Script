@@ -138,7 +138,7 @@ esac
 
 ##Configure SSH Password less logins
 1.sudo su -c touch /home/hduser/.ssh/config; echo "Host *\n StrictHostKeyChecking no\n
-UserKnownHostsFile=/dev/null" > /home/hduser/.ssh/config
+UserKnownHostsFile=/dev/null" > /home/hduser/.ssh/config'
 2.sudo service ssh restart
 
 
@@ -164,7 +164,7 @@ Create 4 nodes from this image
 172.31.16.236 ip-172-31-16-236.ec2.internal 3dn
 
 3.ssh rm 
-4.sudo nano /ect/hosts
+4.sudo nano /etc/hosts
 copy past 
 NN ===> private ip  private dns nn
 RM ===> private ip  private dns rm
@@ -173,7 +173,7 @@ RM ===> private ip  private dns rm
 3DN ===>  private ip  private dns 3dn
 5.exit
 6.ssh 1dn
-7.sudo nano /ect/hosts
+7.sudo nano /etc/hosts
 NN ===> private ip  private dns nn
 RM ===> private ip  private dns rm
 1DN ====> private ip  private dns 1dn
@@ -181,7 +181,7 @@ RM ===> private ip  private dns rm
 3DN ===>  private ip  private dns 3dn
 8.exit
 9.ssh 2dn
-10.sudo nano /ect/hosts
+10.sudo nano /etc/hosts
 NN ===> private ip  private dns nn
 RM ===> private ip  private dns rm
 1DN ====> private ip  private dns 1dn
@@ -275,10 +275,10 @@ copy past pro to pro between <config>
 
 
 #SCP all the files
-1.scp core-site.xml hdfs-site.xml mapred-site.xml yarn-site.xml workers rm:/usr/local/hadoop/etc/hadoop
-2.scp core-site.xml hdfs-site.xml mapred-site.xml yarn-site.xml workers 1dn:/usr/local/hadoop/etc/hadoop
-3.scp core-site.xml hdfs-site.xml mapred-site.xml yarn-site.xml workers 2dn:/usr/local/hadoop/etc/hadoop
-4.scp core-site.xml hdfs-site.xml mapred-site.xml yarn-site.xml workers 3dn:/usr/local/hadoop/etc/hadoop
+1.scp core-site.xml hdfs-site.xml mapred-site.xml yarn-site.xml slaves rm:/usr/local/hadoop/etc/hadoop
+2.scp core-site.xml hdfs-site.xml mapred-site.xml yarn-site.xml slaves 1dn:/usr/local/hadoop/etc/hadoop
+3.scp core-site.xml hdfs-site.xml mapred-site.xml yarn-site.xml slaves 2dn:/usr/local/hadoop/etc/hadoop
+4.scp core-site.xml hdfs-site.xml mapred-site.xml yarn-site.xml slaves 3dn:/usr/local/hadoop/etc/hadoop
 5.cd
 
 #Format Namenode you should be on Namenode
