@@ -1,0 +1,161 @@
+> Create Instance Name ===>Hadoop 2 Single node
+2.Connection to an instance ===> ssh -i nick.pem ubuntu@Public_ip
+
+# Install Java
+1.sudo apt-get update
+2.sudo apt install openjdk-8-jdk openjdk-8-jre
+3.java -version
+
+#Create a Hadoop user for accessing HDFS and MapReduce
+1.sudo addgroup hadoop
+2.sudo adduser hduser --ingroup hadoop 
+3.sudo adduser hduser sudo
+4.sudo su hduser
+5.cd
+
+> if Not installed use this command first use Configure SSH
+ #Install SSH
+ 1.sudo apt-get install openssh-server -y
+
+#Configure SSH
+1.ssh-keygen
+2.cd .ssh
+3.cat id_rsa.pub >> authorized_keys
+4.cd
+5.ssh localhost
+6.exit
+
+#Disable IPV6
+1.sudo nano /etc/sysctl.conf
+at last copy past net. to _ipv6=1 ==>
+net.ipv6.conf.all.disable_ipv6 = 1
+net.ipv6.conf.default.disable_ipv6 = 1
+net.ipv6.conf.lo.disable_ipv6 = 1
+2.sudo sysctl -p
+
+#Download Hadoop
+check if this runs otherwise download from wibsite ===> 1.wget https://dlcdn.apache.org/hadoop/common/stable2/hadoop-2.10.2.tar.gz
+2.ls
+#Extract and Install Hadoop tar ball
+1.tar -xzvf hadoop-2.10.2.tar.gz
+2.ls
+3.sudo mv hadoop-2.10.2 /usr/local/hadoop
+4.sudo chown hduser:hadoop -R /usr/local/hadoop
+
+# Set Enviornment Variable
+1.only for checking ==> readlink -f $(which java)
+2.nano ~/.bashrc or nano .bashrc
+
+export JAVA_HOME=/usr/lib/jvm/java-8-openjdk-amd64
+export HADOOP_HOME=/usr/local/hadoop
+export PATH=$PATH:$HADOOP_HOME/bin
+export PATH=$PATH:$HADOOP_HOME/sbin
+export PATH=$PATH:/usr/local/hadoop/bin/
+export HADOOP_MAPRED_HOME=$HADOOP_HOME
+export HADOOP_COMMON_HOME=$HADOOP_HOME
+export HADOOP_HDFS_HOME=$HADOOP_HOME
+export YARN_HOME=$HADOOP_HOME
+export HADOOP_CONF_DIR=/usr/local/hadoop/etc/hadoop
+
+3. source ~/.bashrc or source .bashrc
+
+4.cd /usr/local/hadoop/etc/hadoop/
+
+#Update hadoop-env.sh
+1.nano hadoop-env.sh
+
+export JAVA_HOME=/usr/lib/jvm/java-8-openjdk-amd64
+export HADOOP_LOG_DIR=/var/log/hadoop
+
+3.sudo mkdir /var/log/hadoop
+4.sudo chown hduser:hadoop -R /var/log/hadoop
+
+#Update core-site.xml
+1.nano core-site.xml
+
+<property>
+  <name>hadoop.tmp.dir</name>
+  <value>/app/hadoop/tmp</value>
+  <description>A base for other temporary directories.</description>
+ </property>
+ <property>
+  <name>fs.defaultFS</name>
+  <value>hdfs://localhost:54310</value>
+</property>
+
+2.sudo mkdir -p /app/hadoop/tmp
+3.sudo chown hduser:hadoop /app/hadoop/tmp
+
+
+#Update mapred-site.xml
+1.cp mapred-site.xml.template mapred-site.xml
+2.nano mapred-site.xml
+
+<property>
+  <name>mapreduce.jobtracker.address</name>
+  <value>localhost:54311</value>
+   </property>
+<property>
+   <name>mapreduce.framework.name</name>
+   <value>yarn</value>
+ </property>
+
+
+#Update hdfs-site.xml
+1.sudo mkdir -p /usr/local/hadoop_store/hdfs/namenode
+2.sudo mkdir -p /usr/local/hadoop_store/hdfs/datanode
+3.sudo chown -R hduser:hadoop /usr/local/hadoop_store
+4.nano hdfs-site.xml
+
+<property> 
+<name>dfs.replication</name>
+  <value>1</value>
+ </property>
+ <property>
+   <name>dfs.namenode.name.dir</name>
+   <value>file:/usr/local/hadoop_store/hdfs/namenode</value>
+ </property>
+ <property>
+   <name>dfs.datanode.data.dir</name>
+   <value>file:/usr/local/hadoop_store/hdfs/datanode</value>
+ </property>
+
+
+#Update yarn-site.xml
+1.nano yarn-site.xml
+
+<property>
+      <name>yarn.nodemanager.aux-services</name>
+      <value>mapreduce_shuffle</value>
+   </property>
+2.cd
+
+#Format Namenode
+1.hdfs namenode -format
+
+2.start-all.sh 
+or start-dfs.sh
+3.start-yarn.sh
+
+
+4.jps
+5.ls
+
+
+6.hdfs dfs -mkdir /user
+7.hdfs dfs -mkdir /user/hduser
+8.hdfs dfs -put hadoop-2.10.2..tar.gz /user/hduser
+
+> Select the Instance copy the public ip and past it in search bar with :50070
+
+hadoop jar /usr/local/hadoop/share/hadoop/mapreduce/hadoop-*examples*.jar pi 5 10
+
+
+
+
+<----- Troubleshooting ----->
+# if you are getting >>>  ..WARN.util.NativeCodeLoader: Unable to load native-hadoop library
+Edit the bashrc file
+nano ~/.bashrc
+export HADOOP_HOME_WARN_SUPPRESS=1
+export HADOOP_ROOT_LOGGER="WARN,DRFA"
