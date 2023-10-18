@@ -144,7 +144,7 @@ or start-dfs.sh
 
 6.hdfs dfs -mkdir /user
 7.hdfs dfs -mkdir /user/hduser
-8.hdfs dfs -put hadoop-2.10.2..tar.gz /user/hduser
+8.hdfs dfs -put hadoop-2.10.2.tar.gz /user/hduser
 
 > Select the Instance copy the public ip and past it in search bar with :50070
 
