@@ -1,0 +1,310 @@
+> Create an Instance
+1.Name the instnace as ===> NN
+2.ubuntu ==> 20
+3.t2.micro
+4.select ===> default secuirty group and edit inbound rules as All traffic my ip
+5.launch the instance
+
+> Connect the instance
+1.ssh -i vijkey.pem ubuntu@public_ip
+
+#Update the system
+1.sudo apt-get update && sudo apt-get dist-upgrade -y
+
+# copy public_ip of instance NN and open new terminal command is
+1.scp -i vijkey.pem vijkey.pem ubuntu@public_ip:~/.ssh/
+
+> Create a Hadoop user for accessing HDFS  Come in previous terminal
+1.sudo addgroup hadoop
+2.sudo addhuser hduser --ingroup hadoop
+3.sudo adduser hduser sudo 
+4.su hduser
+5.cd
+
+# Create local key
+1.ssh-keygen
+2.cd .ssh
+3.cat id_rsa.pub >> authorized_keys
+4.cd
+5.ssh localhost
+6.exit
+
+# copy the instance public key (multi.pem) to hduser`s directory
+1.sudo su
+2. cp /home/ubuntu/.ssh/vijkey.pem /home/hduser/.ssh/
+3.chown hduser:hadoop /home/hduser/.ssh/vijkey.pem
+4.exit
+
+#Install Java (Open-JDK)
+1.sudo apt install openjdk-8-jdk openjdk-8-jre
+2.java -version 
+
+#Download and Install Hadoop
+1.wget https://dlcdn.apache.org/hadoop/common/stable2/hadoop-2.10.2.tar.gz
+2.ls
+3.tar -xzvf hadoop-2.10.2.tar.gz
+4.sudo mv hadoop-2.10.2 /usr/local/hadoop
+5.sudo chown hduser:hadoop -R /usr/local/hadoop/
+
+#Set Enviornment Variable
+1.To check ===> readlink -f $(which java)
+2.nano .bashrc
+
+export JAVA_HOME=/usr/lib/jvm/java-8-openjdk-amd64
+export HADOOP_HOME=/usr/local/hadoop
+export PATH=$PATH:$HADOOP_HOME/bin
+export PATH=$PATH:$HADOOP_HOME/sbin
+export PATH=$PATH:/usr/local/hadoop/bin/
+export HADOOP_MAPRED_HOME=$HADOOP_HOME
+export HADOOP_COMMON_HOME=$HADOOP_HOME
+export HADOOP_HDFS_HOME=$HADOOP_HOME
+export YARN_HOME=$HADOOP_HOME
+export HADOOP_CONF_DIR=/usr/local/hadoop/etc/hadoop
+
+3. source .bashrc
+
+# Source ~/.bashrc
+1.cd /usr/local/hadoop/etc/hadoop
+
+#Update the hadoop-env.sh
+1.nano hadoop-env.sh
+
+export JAVA_HOME=/usr/lib/jvm/java-8-openjdk-amd64
+export HADOOP_LOG_DIR=/var/log/hadoop
+
+2.sudo mkdir /var/log/hadoop/
+3.sudo chown hduser:hadoop /var/log/hadoop/
+4.cd
+
+# Disable IPV6 ----> As Hadoop 2 doest support ipv6
+1.sudo nano /etc/sysctl.conf
+screen shot in phone
+
+#Disable FireWall iptables
+1.sudo iptables -L -n
+2.sudo ufw status
+                                     sudo ufw disable ==> dont fire 
+#Disabling Transparent Hugepage Compaction
+1.cat /sys/kernel/mm/transparent_hugepage/defrag
+
+ 2.sudo nano /etc/init.d/disable-transparent-hugepages
+
+#!/bin/sh
+### BEGIN INIT INFO
+# Provides:          disable-transparent-hugepages
+# Required-Start:    $local_fs
+# Required-Stop:
+# Default-Start:     2 3 4 5
+# Default-Stop:      0 1 6
+# Short-Description: Disable Linux transparent huge pages
+# Description:       Disable Linux transparent huge pages, to improve
+#                    database performance.
+### END INIT INFO
+
+case $1 in
+  start)
+    if [ -d /sys/kernel/mm/transparent_hugepage ]; then
+      thp_path=/sys/kernel/mm/transparent_hugepage
+    elif [ -d /sys/kernel/mm/redhat_transparent_hugepage ]; then
+      thp_path=/sys/kernel/mm/redhat_transparent_hugepage
+    else
+      return 0
+    fi
+
+    echo 'never' > ${thp_path}/enabled
+    echo 'never' > ${thp_path}/defrag
+
+    unset thp_path
+    ;;
+esac
+
+3.sudo chmod 755 /etc/init.d/disable-transparent-hugepages
+4.sudo update-rc.d disable-transparent-hugepages defaults
+
+>>Restart server ===> Go in instance ===> instance state ===> Reboot instance
+> 1.Connect again to an instance ===> ssh -i nick.pem ubuntu@public ip
+2.su hduser
+3.cd
+4.source .bashrc
+5.cat /sys/kernel/mm/transparent_hugepage/defrag
+
+# Set Swappiness
+1.sudo sysctl vm.swappiness=1
+
+
+# Configure NTP
+1.sudo timedatectl set-timezone Asia/Kolkata
+2.sudo apt install ntp -y
+
+##Configure SSH Password less logins
+1.sudo su -c touch /home/hduser/.ssh/config; echo "Host *\n StrictHostKeyChecking no\n
+UserKnownHostsFile=/dev/null" > /home/hduser/.ssh/config
+2.sudo service ssh restart
+
+
+# Configure .profile (make sure you are on NN) 
+1.nano .profile
+eval `ssh-agent` ssh-add /home/hduser/.ssh/vijkey.pem
+2.source .profile
+3.cd .ssh
+4.ls -l
+5.chmod 600 vijkey.pem 
+6.cd
+7.source .profile
+
+----------****** Create a snapshot at this point ******-----------------
+Create 4 nodes from this image
+# 1.cd                                                                                       Give all instances 
+# 2.sudo nano /etc/hosts
+#   and then copy past in second line include these lines:FQDN ===> NN ===> private ip  private dns nn
+172.31.29.56 ip-172-31-29-56.ec2.internal nn                                        RM ===> private ip  private dns rm
+172.31.27.96 ip-172-31-27-96.ec2.internal rm                                        1DN ====> private ip  private dns 1dn
+172.31.18.137 ip-172-31-18-137.ec2.internal 1dn                                     2DN ====> private ip  private dns 2dn
+172.31.23.79 ip-172-31-23-79.ec2.internal 2dn                                       3DN ===>  private ip  private dns 3dn
+172.31.16.236 ip-172-31-16-236.ec2.internal 3dn
+
+3.ssh rm 
+4.sudo nano /ect/hosts
+copy past 
+NN ===> private ip  private dns nn
+RM ===> private ip  private dns rm
+1DN ====> private ip  private dns 1dn
+2DN ====> private ip  private dns 2dn
+3DN ===>  private ip  private dns 3dn
+5.exit
+6.ssh 1dn
+7.sudo nano /ect/hosts
+NN ===> private ip  private dns nn
+RM ===> private ip  private dns rm
+1DN ====> private ip  private dns 1dn
+2DN ====> private ip  private dns 2dn
+3DN ===>  private ip  private dns 3dn
+8.exit
+9.ssh 2dn
+10.sudo nano /ect/hosts
+NN ===> private ip  private dns nn
+RM ===> private ip  private dns rm
+1DN ====> private ip  private dns 1dn
+2DN ====> private ip  private dns 2dn
+3DN ===>  private ip  private dns 3dn
+11.exit
+12.ssh 3dn
+13.sudo nano /etc/hosts
+NN ===> private ip  private dns nn
+RM ===> private ip  private dns rm
+1DN ====> private ip  private dns 1dn
+2DN ====> private ip  private dns 2dn
+3DN ===>  private ip  private dns 3dn
+14.exit
+
+# Install and configure dsh
+1.sudo apt install dsh -y
+2.sudo nano /etc/dsh/machines.list
+command localhost ===> #localhost
+then edit this ====>nn 
+                    rm
+                    1dn
+                    2dn
+                    3dn
+4.dsh -a uptime
+
+5.cd /usr/local/hadoop/etc/hadoop
+
+# Configure masters and slaves
+1.nano masters
+edit ===> rm
+
+2.nano slaves
+#localhost
+1dn
+2dn
+3dn
+
+#Update core-site.xml
+1.nano core-site.xml
+2.copy past pro to pro between <config>
+<property>
+    <name>fs.defaultFS</name>
+    <value>hdfs://nn:9000</value>
+  </property>
+
+3.  mkdir -p /usr/local/hadoop/data/hdfs/namenode
+
+#Update yarn-site.xml
+1.nano yarn-site.xml
+copy past pro to pro between <config>
+<property>
+    <name>yarn.nodemanager.aux-services</name>
+    <value>mapreduce_shuffle</value>
+  </property>
+  <property>
+    <name>yarn.resourcemanager.hostname</name>
+    <value>rm</value>
+  </property>
+<property>
+        <name>yarn.nodemanager.env-whitelist</name>
+        <value>JAVA_HOME,HADOOP_COMMON_HOME,HADOOP_HDFS_HOME,HADOOP_CONF_DIR,CLASSPATH_PREPEND_DISTCACHE,HADOOP_YARN_HOME,HADOOP_MAPRED_HOME</value>
+  </property>
+
+#Update mapred-site.xml
+
+1.nano mapred-site.xml
+copy past pro to pro between <config>
+<property>
+    <name>mapreduce.jobtracker.address</name>
+    <value>rm:54311</value>
+  </property>
+  <property>
+    <name>mapreduce.framework.name</name>
+    <value>yarn</value>
+  </property>
+<property>
+  <name>yarn.app.mapreduce.am.env</name>
+  <value>HADOOP_MAPRED_HOME=$HADOOP_MAPRED_HOME</value>
+</property>
+<property>
+  <name>mapreduce.map.env</name>
+  <value>HADOOP_MAPRED_HOME=$HADOOP_MAPRED_HOME</value>
+</property>
+<property>
+  <name>mapreduce.reduce.env</name>
+  <value>HADOOP_MAPRED_HOME=$HADOOP_MAPRED_HOME</value>
+</property>
+
+2.sudo chown -R hduser:hadoop $HADOOP_HOME
+
+
+#SCP all the files
+1.scp core-site.xml hdfs-site.xml mapred-site.xml yarn-site.xml workers rm:/usr/local/hadoop/etc/hadoop
+2.scp core-site.xml hdfs-site.xml mapred-site.xml yarn-site.xml workers 1dn:/usr/local/hadoop/etc/hadoop
+3.scp core-site.xml hdfs-site.xml mapred-site.xml yarn-site.xml workers 2dn:/usr/local/hadoop/etc/hadoop
+4.scp core-site.xml hdfs-site.xml mapred-site.xml yarn-site.xml workers 3dn:/usr/local/hadoop/etc/hadoop
+5.cd
+
+#Format Namenode you should be on Namenode
+1.hdfs namenode -format
+
+# Start the cluster
+1.start-dfs.sh
+2.ssh rm
+3.start-yarn.sh
+4.jps
+5.exit
+6.jps
+7.dsh -a jps
+
+1.hdfs dfs -mkdir /user
+2.hdfs dfs -mkdir /user/ubuntu
+3.hdfs dfs -put hadoop-2.10.2.tar.gz /user/hduser
+
+copy the public ip of instance ===> NN then past on search bar:50070
+
+4.yarn jar /usr/local/hadoop/share/hadoop/mapreduce/hadoop-mapreduce-examples-2.10.2.jar pi  5 10
+
+copy the public ip of RM and with :8088
+
+
+
+
+
+
